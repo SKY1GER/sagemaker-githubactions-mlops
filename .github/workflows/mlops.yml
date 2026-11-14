@@ -27,6 +27,7 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: us-east-1
+          role-skip-session-tagging: true
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
