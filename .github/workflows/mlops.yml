@@ -19,13 +19,13 @@ jobs:
     timeout-minutes: 120
     env:
       AWS_REGION: us-east-1
-      SAGEMAKER_ROLE_ARN: ${{ vars.SAGEMAKER_ROLE_ARN }}
-      S3_BUCKET: ${{ vars.S3_BUCKET }}
+      SAGEMAKER_ROLE_ARN: ${{ secrets.SAGEMAKER_ROLE_ARN }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-1
       - uses: actions/setup-python@v5
         with:
