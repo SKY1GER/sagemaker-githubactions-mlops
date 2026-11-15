@@ -77,10 +77,11 @@ register_args = model.register(
     content_types=["application/json"],
     response_types=["application/json"],
     inference_instances=["ml.c7i.large", "ml.m5d.large"],
-    transform_instances=["ml.c7i.large", "ml.m5d.large"],
+    transform_instances=["ml.m5.large"],
     model_package_group_name="CancerClassificationModels",
     approval_status="Approved",
 )
+
 registration = ModelStep(name="RegisterModel", step_args=register_args)
 
 pipeline = Pipeline(
