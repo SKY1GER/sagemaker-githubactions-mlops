@@ -8,7 +8,11 @@ execution_arn = json.load(open("execution.json"))["execution_arn"]
 steps = sm.list_pipeline_execution_steps(
     PipelineExecutionArn=execution_arn
 )["PipelineExecutionSteps"]
-registered = next(s for s in steps if s["StepName"] == "RegisterModel")
+
+registered = next(
+    s for s in steps
+    if "RegisterModel" in s["StepName"] and "RegisterModel" in s.get("Metadata", {})
+)
 package_arn = registered["Metadata"]["RegisterModel"]["Arn"]
 
 stamp = str(int(time.time()))
