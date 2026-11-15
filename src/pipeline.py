@@ -1,13 +1,12 @@
 import os
 import json
 import boto3
-from sagemaker.inputs import TrainingInput
-from sagemaker.processing import ProcessingOutput
-from sagemaker.sklearn.estimator import SKLearn
+from sagemaker.processing import ProcessingInput, ProcessingOutput
 from sagemaker.sklearn.model import SKLearnModel
 from sagemaker.sklearn.processing import SKLearnProcessor
+from sagemaker.workflow.functions import Join
 from sagemaker.workflow.pipeline_context import PipelineSession
-from sagemaker.workflow.steps import ProcessingStep, TrainingStep
+from sagemaker.workflow.steps import ProcessingStep
 from sagemaker.workflow.model_step import ModelStep
 from sagemaker.workflow.pipeline import Pipeline
 
@@ -20,8 +19,10 @@ session = PipelineSession(
 )
 
 processor = SKLearnProcessor(
-    framework_version="1.2-1", role=role,
-    instance_type="ml.t3.medium", instance_count=1,
+    framework_version="1.2-1",
+    role=role,
+    instance_type="ml.t3.medium",
+    instance_count=1,
     sagemaker_session=session,
 )
 process_args = processor.run(
@@ -36,29 +37,47 @@ preprocess = ProcessingStep(name="PreprocessData", step_args=process_args)
 def output_uri(name):
     return preprocess.properties.ProcessingOutputConfig.Outputs[name].S3Output.S3Uri
 
-estimator = SKLearn(
-    entry_point="train.py", source_dir="src",
-    framework_version="1.2-1", py_version="py3",
-    role=role, instance_type="ml.m5.large", instance_count=1,
+train_processor = SKLearnProcessor(
+    framework_version="1.2-1",
+    role=role,
+    instance_type="ml.t3.medium",
+    instance_count=1,
     sagemaker_session=session,
 )
-train_args = estimator.fit({
-    "train": TrainingInput(s3_data=output_uri("train")),
-    "test": TrainingInput(s3_data=output_uri("test")),
-})
-training = TrainingStep(name="TrainModel", step_args=train_args)
+train_args = train_processor.run(
+    code="src/train.py",
+    inputs=[
+        ProcessingInput(source=output_uri("train"), destination="/opt/ml/processing/train"),
+        ProcessingInput(source=output_uri("test"), destination="/opt/ml/processing/test"),
+    ],
+    outputs=[
+        ProcessingOutput(output_name="model", source="/opt/ml/processing/model"),
+    ],
+)
+training = ProcessingStep(name="TrainModel", step_args=train_args)
+
+model_artifact_uri = Join(
+    on="/",
+    values=[
+        training.properties.ProcessingOutputConfig.Outputs["model"].S3Output.S3Uri,
+        "model.tar.gz",
+    ],
+)
 
 model = SKLearnModel(
-    model_data=training.properties.ModelArtifacts.S3ModelArtifacts,
-    role=role, entry_point="inference.py", source_dir="src",
-    framework_version="1.2-1", py_version="py3",
+    model_data=model_artifact_uri,
+    role=role,
+    entry_point="inference.py",
+    source_dir="src",
+    framework_version="1.2-1",
+    py_version="py3",
     sagemaker_session=session,
 )
 register_args = model.register(
     content_types=["application/json"],
     response_types=["application/json"],
-    inference_instances=["ml.m5.large"],
-    transform_instances=["ml.m5.large"],
+    inference_instances=["ml.c7i.large", "ml.m5d.large"],
+    transform_instances=["ml.c7i.large", "ml.m5d.large"],
     model_package_group_name="CancerClassificationModels",
     approval_status="Approved",
 )

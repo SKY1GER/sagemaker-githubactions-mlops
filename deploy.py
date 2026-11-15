@@ -27,7 +27,7 @@ sm.create_endpoint_config(
         "VariantName": "AllTraffic",
         "ModelName": model_name,
         "InitialInstanceCount": 1,
-        "InstanceType": "ml.m5.large",
+        "InstanceType": "ml.c7i.large",
         "InitialVariantWeight": 1,
     }],
 )
