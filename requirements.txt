@@ -1,5 +1,5 @@
 boto3==1.36.0
-sagemaker>=2.220.2
+sagemaker>=2.220.2,<3.0.0
 scikit-learn>=1.2
 pandas>=1.5,<3
 joblib>=1.2,<3
