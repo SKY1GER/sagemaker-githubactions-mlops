@@ -35,8 +35,9 @@ sm.create_endpoint_config(
         "InitialVariantWeight": 1,
     }],
 )
+
 try:
-    sm.describe_endpoint(EndpointName=endpoint_name)
+    desc = sm.describe_endpoint(EndpointName=endpoint_name)
 except sm.exceptions.ClientError as e:
     if e.response["Error"]["Code"] != "ValidationException":
         raise
@@ -44,9 +45,17 @@ except sm.exceptions.ClientError as e:
         EndpointName=endpoint_name, EndpointConfigName=config_name
     )
 else:
-    sm.update_endpoint(
-        EndpointName=endpoint_name, EndpointConfigName=config_name
-    )
+    if desc["EndpointStatus"] == "Failed":
+        print("Deleting failed endpoint before recreating...", flush=True)
+        sm.delete_endpoint(EndpointName=endpoint_name)
+        sm.get_waiter("endpoint_deleted").wait(EndpointName=endpoint_name)
+        sm.create_endpoint(
+            EndpointName=endpoint_name, EndpointConfigName=config_name
+        )
+    else:
+        sm.update_endpoint(
+            EndpointName=endpoint_name, EndpointConfigName=config_name
+        )
 
 sm.get_waiter("endpoint_in_service").wait(EndpointName=endpoint_name)
 print("Endpoint InService:", endpoint_name)
