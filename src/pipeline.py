@@ -69,6 +69,7 @@ model = SKLearnModel(
     role=role,
     entry_point="inference.py",
     source_dir="src",
+    code_location=f"s3://{bucket}/code",
     framework_version="1.2-1",
     py_version="py3",
     sagemaker_session=session,
