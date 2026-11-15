@@ -21,7 +21,7 @@ session = PipelineSession(
 
 processor = SKLearnProcessor(
     framework_version="1.2-1", role=role,
-    instance_type="ml.m5.large", instance_count=1,
+    instance_type="ml.t3.medium", instance_count=1,
     sagemaker_session=session,
 )
 process_args = processor.run(
